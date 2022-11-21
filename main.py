@@ -23,26 +23,38 @@ from selenium import webdriver
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 
+# INSTANCE VARIABLES
+
+# this is the "home page" url for a particular run, something for the program to fall back to if needed
 branch_start = ""
 
+# starts the main loop
 def main():
     url = input("Please enter a url to search")
     print(url[0:4])
+    # fast and loose attempt to allow a user to type "google" and get to https://google.com
     if url[0:4] != "http":
         url = "https://" + url
 
     if ".com" not in url:
         url += ".com"
-    set_branch_start(url)
+    # not the right way
+    #branch_start = url
+
+    # we're opening Chrome with Selenium
     driver = webdriver.Chrome()
     driver.get(url)
     link_text = "start"
     while link_text != "" or link_text != "quit":
         link_text = input("Type the name of the button you wish to press on this page")
-        if link_text == "home":
-            driver.get(branch_start)
-            continue
+       # if link_text == "home":
+           # driver.get(branch_start)
+           # continue
+
+        # an html element, hopefully clickable
         element = None
+
+        # nested try excepts to try to click on different elements, this is not great lol, but it works at a basic level
         try:
             element = driver.find_element("partial link text", link_text)
         except:
@@ -57,9 +69,11 @@ def main():
                         element = driver.find_element("tag name", "<a class")
                     except:
                         print("Couldn't find that button, try another by entering the text on the button")
-
+        # if we found a clickable element
         if element != None:
             element.click()
+            # sometimes the web page denies my request to get in, so for now I just skip that URL, but this needs to be
+            # fixed
             try:
                 f = urllib.request.Request(url,headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'})
                 page = urllib.request.urlopen(f)
@@ -85,9 +99,8 @@ def main():
 
 #print(soup)
 
-def set_branch_start(url):
-    branch_start = url
 
+# eventually need to reform this method to allow for any phrase
 def check_for_my_name(soup):
     first_name = "kory"
     last_name = "stennett"
@@ -95,6 +108,7 @@ def check_for_my_name(soup):
         if last_name.casefold() in str(soup):
             print("True")
 
+# saving the urls to a file to be used later
 def save_urls(soup,driver):
     file = open("stripped_urls.txt", "r+")
     now = datetime.now()
@@ -106,6 +120,8 @@ def save_urls(soup,driver):
 
         if link != None:
             try:
+                # only send it to the file if it actually starts with http because we can almost always assume that will
+                # be a link, not perfect though
                 if str(link.get('href')[0:4]) == "http" and str(link.get('href')) not in urls:
                     print(link.get('href'))
                     file.write(str(link.get('href')) + "\n")
@@ -114,8 +130,5 @@ def save_urls(soup,driver):
     file.close()
     time.sleep(.1)
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
 
 main()
